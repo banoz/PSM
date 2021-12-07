@@ -3,7 +3,7 @@ const byte controlPin = 13; // triac output
 const byte interruptPin = 3; // phase sensing
 
 const unsigned int range = 127;
-const unsigned int valueFactor = 8; // 1024 (10 bit) / 128 (range + 1)
+const unsigned int valueFactor = 4; // precalculated constant 1024 [10 bit ADC resolution] / 128 [range + 1] / 2
 
 volatile unsigned int value = 0;
 
@@ -21,9 +21,9 @@ void calculateSkip() {
 
   if (a >= range) {
     a -= range;
-    skip = true;
-  } else {
     skip = false;
+  } else {
+    skip = true;
   }
 
   if (a > range) {
@@ -44,10 +44,10 @@ void updateControl() {
 
 void updateValue() {
   int readValue = analogRead(valuePin);
-  int oldValue = value * valueFactor;
+  int oldValue = value * valueFactor * 2;
 
-  if (readValue > (oldValue + valueFactor) || readValue < (oldValue - valueFactor)) { // add some hysteresis to filter out noise
-    value = readValue / valueFactor;
+  if (readValue > (oldValue + valueFactor * 3) || (readValue + valueFactor) < oldValue) { // add some hysteresis to filter out noise
+    value = readValue / valueFactor / 2;
     a = 0;
   }
 }
